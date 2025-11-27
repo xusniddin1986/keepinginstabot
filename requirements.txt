@@ -1,0 +1,10 @@
+python-telegram-bot
+numpy
+opencv-python
+pygame
+pyTelegramBotAPI
+yt-dlp
+instaloader
+requests
+flask
+youtube-search-python
