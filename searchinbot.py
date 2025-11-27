@@ -13,6 +13,9 @@ app = Flask(__name__)
 
 VIDEO_TEXT = "Telegramda video yuklab beradigan eng zo'r botlardan biri 🚀 | @KeepingInsta_Bot"
 
+# ---------------- Callback dictionary ----------------
+callback_dict = {}
+
 # ---------------- Commands ----------------
 @bot.message_handler(commands=['start'])
 def start(msg):
@@ -29,8 +32,8 @@ def help_cmd(msg):
         msg.chat.id,
         "Bot ishlatish:\n"
         "1️⃣ YouTubedan yoki Instagramdan video linkini yuboring\n"
-        "2️⃣ Video pastidagi 🎵 tugmasi orqali Musiqani yulab oling oling\n"
-        "3️⃣ Faqat musiqa nomini yozsangiz, bot topib Musiqani chiqarib beradi"
+        "2️⃣ Video pastidagi 🎵 tugmasi orqali Musiqani yuklab oling\n"
+        "3️⃣ Faqat musiqa nomini yozsangiz, bot topib Musiqani chiqarib beradi\n\n"
         "/start - Botni ishga tushirish\n"
         "/help - Qo'llanma\n"
         "/about - Bot haqida\n\n"
@@ -43,7 +46,7 @@ def about(msg):
         msg.chat.id,
         "Telegramda video yuklab beradigan eng zo'r botlardan biri 🚀 | @KeepingInsta_Bot\n"
         "Telegram Kanalimiz: @aclubnc\n"
-        "Username: @KeepingInsta_Bot"
+        "Username: @KeepingInsta_Bot\n"
         "Dasturchi: @thexamidovs > Nabiyulloh.X 🧑‍💻"
     )
 
@@ -55,8 +58,10 @@ def handle_msg(msg):
         try:
             file_path = download_video(text)
             markup = InlineKeyboardMarkup()
+            uid = str(uuid.uuid4())
+            callback_dict[uid] = text
             markup.add(
-                InlineKeyboardButton("🎵 Qo‘shiqni yuklab olish", callback_data=f"get_audio|{text}")
+                InlineKeyboardButton("🎵 Qo‘shiqni yuklab olish", callback_data=f"get_audio|{uid}")
             )
             bot.send_video(msg.chat.id, open(file_path, 'rb'), caption=VIDEO_TEXT, reply_markup=markup)
             os.remove(file_path)
@@ -75,13 +80,17 @@ def handle_msg(msg):
 @bot.callback_query_handler(func=lambda call: True)
 def handle_callback(call):
     if call.data.startswith("get_audio|"):
-        url = call.data.split("|")[1]
-        try:
-            file_path = download_audio(url)
-            bot.send_audio(call.message.chat.id, open(file_path, 'rb'))
-            os.remove(file_path)
-        except Exception as e:
-            bot.send_message(call.message.chat.id, f"Audio yuklab bo‘lmadi: {str(e)}")
+        uid = call.data.split("|")[1]
+        url = callback_dict.get(uid)
+        if url:
+            try:
+                file_path = download_audio(url)
+                bot.send_audio(call.message.chat.id, open(file_path, 'rb'))
+                os.remove(file_path)
+            except Exception as e:
+                bot.send_message(call.message.chat.id, f"Audio yuklab bo‘lmadi: {str(e)}")
+        else:
+            bot.send_message(call.message.chat.id, "Audio yuklab bo‘lmadi: URL topilmadi ❌")
 
 # ---------------- Helper functions ----------------
 def download_video(url):
@@ -127,7 +136,5 @@ def index():
 # ---------------- Start bot ----------------
 if __name__ == "__main__":
     bot.remove_webhook()
-    # Render.com uchun URL o'zgartiriladi
     bot.set_webhook(url=f"https://keepinginstabot.onrender.com/{BOT_TOKEN}")
-    # Flask app
     app.run(host="0.0.0.0", port=int(os.environ.get('PORT', 5000)))
