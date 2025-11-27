@@ -128,6 +128,6 @@ def index():
 if __name__ == "__main__":
     bot.remove_webhook()
     # Render.com uchun URL o'zgartiriladi
-    bot.set_webhook(url=f"https://YOUR_RENDER_URL/{BOT_TOKEN}")
+    bot.set_webhook(url=f"https://keepinginstabot.onrender.com/{BOT_TOKEN}")
     # Flask app
     app.run(host="0.0.0.0", port=int(os.environ.get('PORT', 5000)))
