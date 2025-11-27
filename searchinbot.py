@@ -24,6 +24,7 @@ def start(msg):
         "Assalomu Alaykum 👋!\n\n"
         "YouTubedan yoki Instagramdan video linkini yuboring yoki musiqa nomini yozing.\n\n"
         "Tugmalar yordamida video va musiqani yuklab olishingiz mumkin.\n\n"
+        "Qo'llanma bilan tanishib chiqing: /help\n"
     )
 
 @bot.message_handler(commands=['help'])
@@ -46,8 +47,8 @@ def about(msg):
         msg.chat.id,
         "Telegramda video yuklab beradigan eng zo'r botlardan biri 🚀 | @KeepingInsta_Bot\n"
         "Telegram Kanalimiz: @aclubnc\n"
-        "Username: @KeepingInsta_Bot\n"
-        "Dasturchi: @thexamidovs > Nabiyulloh.X 🧑‍💻"
+        "Bot-Username: @KeepingInsta_Bot\n"
+        "Bot-Dasturchi: @thexamidovs > Nabiyulloh.X 🧑‍💻"
     )
 
 # ---------------- Message handler ----------------
@@ -56,6 +57,9 @@ def handle_msg(msg):
     text = msg.text.strip()
     if text.startswith("https://") or text.startswith("http://"):
         try:
+            # Video yuklanmoqda xabari
+            bot.send_message(msg.chat.id, "⏳ Video yuklanmoqda...")
+
             file_path = download_video(text)
             markup = InlineKeyboardMarkup()
             uid = str(uuid.uuid4())
