@@ -2,9 +2,9 @@ from flask import Flask, request
 import telebot
 from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton
 from yt_dlp import YoutubeDL
+from youtubesearchpython import VideosSearch
 import os
 import uuid
-from youtubesearchpython import VideosSearch
 import json
 
 # ---------------- Bot token ----------------
@@ -59,7 +59,7 @@ callback_dict = {}
 def start(msg):
     bot.send_message(
         msg.chat.id,
-        f"{welcome_text}\n\nYouTubedan yoki Instagramdan video linkini yuboring yoki musiqa nomini yozing.\n\nTugmalar yordamida video va musiqani yuklab olishingiz mumkin.\n\nQo'llanma bilan tanishib chiqing: /help"
+        f"{welcome_text}\n\nYouTubedan, TikTok yoki Instagramdan video linkini yuboring yoki musiqa nomini yozing.\n\nTugmalar yordamida video va musiqani yuklab olishingiz mumkin.\n\nQo'llanma bilan tanishib chiqing: /help"
     )
 
 @bot.message_handler(commands=['help'])
@@ -67,9 +67,9 @@ def help_cmd(msg):
     bot.send_message(
         msg.chat.id,
         "Bot ishlatish:\n"
-        "1️⃣ YouTube/Instagram video link yuboring\n"
+        "1️⃣ YouTube/TikTok/Instagram video link yuboring\n"
         "2️⃣ 🎵 tugmasi orqali Musiqani yuklab oling\n"
-        "3️⃣ Musiqa nomini yozsangiz — bot o‘zi topadi\n\n"
+        "3️⃣ Musiqa nomini yozsangiz — bot 10 ta variant chiqaradi\n\n"
         "/start - Botni ishga tushirish\n"
         "/help - Qo'llanma\n"
         "/about - Bot haqida\n"
@@ -156,7 +156,6 @@ def handle_msg(msg):
 def handle_callback(call):
     data = call.data
 
-    # ----- Audio from video -----
     if data.startswith("get_audio|"):
         uid = data.split("|")[1]
         url = callback_dict.get(uid)
@@ -171,7 +170,6 @@ def handle_callback(call):
         except Exception as e:
             bot.send_message(call.message.chat.id, f"Audio yuklab bo‘lmadi: {str(e)}")
 
-    # ----- Select music from search -----
     elif data.startswith("select_music|"):
         url = data.split("|")[1]
         try:
@@ -181,7 +179,6 @@ def handle_callback(call):
         except Exception as e:
             bot.send_message(call.message.chat.id, f"Audio yuklab bo‘lmadi: {str(e)}")
 
-    # ----- Admin functions -----
     elif call.from_user.id not in admins:
         bot.answer_callback_query(call.id, "Sizda ruxsat yo‘q ❌")
         return
@@ -234,7 +231,12 @@ def set_welcome(msg):
 # ---------------- Helper functions ----------------
 def download_video(url):
     out_file = os.path.join(TEMP_DIR, f"{uuid.uuid4()}.mp4")
-    ydl_opts = {'outtmpl': out_file, 'format': 'best[ext=mp4]/best'}
+    ydl_opts = {
+        'outtmpl': out_file,
+        'format': 'best[ext=mp4]/best',
+        'noplaylist': True,
+        'quiet': True
+    }
     with YoutubeDL(ydl_opts) as ydl:
         ydl.download([url])
     return out_file
@@ -246,16 +248,19 @@ def download_audio(url):
         'outtmpl': out_file,
         'postprocessors': [
             {'key': 'FFmpegExtractAudio','preferredcodec': 'mp3','preferredquality': '192'}
-        ]
+        ],
+        'noplaylist': True,
+        'quiet': True
     }
     with YoutubeDL(ydl_opts) as ydl:
         ydl.download([url])
     return out_file
 
 def search_youtube(query, limit=10):
-    result = VideosSearch(query, limit=limit).result()
+    search = VideosSearch(query, limit=limit)
     videos = []
-    if result["result"]:
+    result = search.result()
+    if "result" in result and result["result"]:
         for video in result["result"]:
             videos.append({"title": video["title"], "link": video["link"]})
     return videos
